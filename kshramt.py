@@ -46,10 +46,7 @@ def binning(xs, bins):
         else:
             ns[i_bin] += 1/2
             ns[i_bin - 1] += 1/2
-    return [{'x1': x1,
-             'x2': x2,
-             'n': n,
-             'y': n/n_xs/dx}
+    return [(x1, x2, n, n/n_xs/dx)
             for (x1, x2), n
             in zip(each_cons(linspace(x_min, x_max, bins + 1), 2), ns)]
 
@@ -395,20 +392,20 @@ class _Tester(_unittest.TestCase):
         bins = 10
         bs = binning([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], bins)
         b0 = bs[0]
-        self.assertAlmostEqual(b0['x1'], 0)
-        self.assertAlmostEqual(b0['x2'], 1)
-        self.assertAlmostEqual(b0['n'], 1.5)
-        self.assertAlmostEqual(b0['y'], 1.5/11)
+        self.assertAlmostEqual(b0[0], 0)
+        self.assertAlmostEqual(b0[1], 1)
+        self.assertAlmostEqual(b0[2], 1.5)
+        self.assertAlmostEqual(b0[3], 1.5/11)
         bbins = bs[-1]
-        self.assertAlmostEqual(bbins['x1'], 9)
-        self.assertAlmostEqual(bbins['x2'], 10)
-        self.assertAlmostEqual(bbins['n'], 1.5)
-        self.assertAlmostEqual(bbins['y'], 1.5/11)
+        self.assertAlmostEqual(bbins[0], 9)
+        self.assertAlmostEqual(bbins[1], 10)
+        self.assertAlmostEqual(bbins[2], 1.5)
+        self.assertAlmostEqual(bbins[3], 1.5/11)
         for i, b in enumerate(bs[1:bins-1]):
-            self.assertAlmostEqual(b['x1'], i + 1)
-            self.assertAlmostEqual(b['x2'], i + 2)
-            self.assertAlmostEqual(b['n'], 1)
-            self.assertAlmostEqual(b['y'], 1/11)
+            self.assertAlmostEqual(b[0], i + 1)
+            self.assertAlmostEqual(b[1], i + 2)
+            self.assertAlmostEqual(b[2], 1)
+            self.assertAlmostEqual(b[3], 1/11)
 
     def test_linspace(self):
         for x, y in zip(linspace(0, 10, 11), list(range(11))):
