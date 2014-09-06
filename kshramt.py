@@ -170,7 +170,7 @@ def _unit_middle_point(p1, p2):
     x = (x1 + x2)/2
     y = (y1 + y2)/2
     z = (z1 + z2)/2
-    r = _math.sqrt(x**2 + y**2 + z**2)
+    r = _math.sqrt(x*x + y*y + z*z)
     return x/r, y/r, z/r
 
 
