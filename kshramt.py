@@ -20,6 +20,84 @@ class Error(Exception):
 TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
+def rad(d):
+    return d*_math.pi/180
+
+
+def deg(r):
+    return r*180/_math.pi
+
+
+def _R_theta_phi(theta, phi):
+    ct = _math.cos(theta)
+    st = _math.sin(theta)
+    cp = _math.cos(phi)
+    sp = _math.sin(phi)
+    return dot(((ct, 0, -st),
+                (0, 1, 0),
+                (st, 0, ct)),
+               ((cp, -sp, 0),
+                (sp, cp, 0),
+                (0, 0, 1)))
+
+
+def kagan_angles(P, Q):
+    """
+    P: rotation matrix [3x3]
+    Q: rotation matrix [3x3]
+
+    Reference: Kagan, Y. Y. (1991), 3-D rotation of double-couple earthquake sources, Geophys. J. Int., 106(3), 709–716, doi:10.1111/j.1365-246X.1991.tb06343.x.
+    """
+    Cs = (
+        ((1.0, 0.0, 0.0),
+         (0.0, 1.0, 0.0),
+         (0.0, 0.0, 1.0)),
+        ((-1.0, 0.0, 0.0),
+         (0.0, -1.0, 0.0),
+         (0.0, 0.0, 1.0)),
+        ((1.0, 0.0, 0.0),
+         (0.0, -1.0, 0.0),
+         (0.0, 0.0, -1.0)),
+        ((-1.0, 0.0, 0.0),
+         (0.0, 1.0, 0.0),
+         (0.0, 0.0, -1.0)),
+    )
+    φs = []
+    for C in Cs:
+        PQinvC = dots(P, transpose(Q), C)
+        q0 = _math.sqrt(PQinvC[0][0] + PQinvC[1][1] + PQinvC[2][2] + 1)/2
+        φs.append(2*_math.acos(q0))
+    return φs
+
+
+def dots(*ms):
+    return _functools.reduce(dot, ms)
+
+
+def dot(A, B):
+    m = len(A)
+    nA = len(A[0])
+    nB = len(B)
+    assert nA == nB
+    l = len(B[0])
+    m_range = range(m)
+    n_range = range(nA)
+    l_range = range(l)
+    return [[sum(A[i][k]*B[k][j]
+                 for k in n_range)
+             for j in l_range]
+            for i in m_range]
+
+
+def transpose(A):
+    m = len(A)
+    n = len(A[0])
+    m_range = range(m)
+    n_range = range(n)
+    return [[A[j][i] for j in n_range]
+            for i in m_range]
+
+
 def binning(xs, bins):
     if bins < 1:
         return []
@@ -387,6 +465,26 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_kagan_angles(self):
+        d = 0.001
+        self.assertTrue(abs(deg(min(kagan_angles(_R_theta_phi(rad(30), rad(20)), _R_theta_phi(rad(30 + d), rad(20 + d)))) - d*_math.sqrt(2)) <= d*1e-3))
+
+    def test_transpose(self):
+        A = ((1, 2),
+             (3, 4))
+        self.assertEqual(transpose(A),
+                         [[1, 3],
+                          [2, 4]])
+
+    def test_dots(self):
+        A = ((1, 2),
+             (3, 4))
+        B = [[5, 6],
+             (7, 8)]
+        self.assertEqual(dots(A, B),
+                         [[19, 22],
+                          [43, 50]])
 
     def test_binning(self):
         bins = 10
