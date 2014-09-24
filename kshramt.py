@@ -62,16 +62,16 @@ def kagan_angles(P, Q):
          (0.0, 1.0, 0.0),
          (0.0, 0.0, -1.0)),
     )
-    φs = []
+    angles = []
     for C in Cs:
-        PQinvC = dots(P, transpose(Q), C)
-        # If `PQinvC[0][0] + PQinvC[1][1] + PQinvC[2][2] + 1 < 0` (when inaccurate input), replace it by 0.
+        PtQC = dots(P, transpose(Q), C)
+        # If `PtQC[0][0] + PtQC[1][1] + PtQC[2][2] + 1 < 0` (when inaccurate input), replace it by 0.
         # This replacement may not cause any problematic result since:
-        # 1) If the term is near 0, Φ is near π.
+        # 1) If the term is near 0, angle is near π.
         # 2) The minimum rotation angle cannot exceed 120 degrees (Kagan, 1990).
-        q0 = _math.sqrt(max(PQinvC[0][0] + PQinvC[1][1] + PQinvC[2][2] + 1, 0))/2
-        φs.append(2*_math.acos(q0))
-    return φs
+        q0 = _math.sqrt(max(PtQC[0][0] + PtQC[1][1] + PtQC[2][2] + 1, 0))/2
+        angles.append(2*_math.acos(q0))
+    return angles
 
 
 def dots(*ms):
