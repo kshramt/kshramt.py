@@ -41,6 +41,20 @@ def _R_theta_phi(theta, phi):
                 (0, 0, 1)))
 
 
+_INVARIANT_ROTATIONS_FOR_DOUBLE_COUPLE = (
+    ((1.0, 0.0, 0.0),
+     (0.0, 1.0, 0.0),
+     (0.0, 0.0, 1.0)),
+    ((-1.0, 0.0, 0.0),
+     (0.0, -1.0, 0.0),
+     (0.0, 0.0, 1.0)),
+    ((1.0, 0.0, 0.0),
+     (0.0, -1.0, 0.0),
+     (0.0, 0.0, -1.0)),
+    ((-1.0, 0.0, 0.0),
+     (0.0, 1.0, 0.0),
+     (0.0, 0.0, -1.0)),
+)
 def kagan_angles(P, Q):
     """
     P: rotation matrix [3x3]
@@ -48,30 +62,18 @@ def kagan_angles(P, Q):
 
     Reference: Kagan, Y. Y. (1991), 3-D rotation of double-couple earthquake sources, Geophys. J. Int., 106(3), 709–716, doi:10.1111/j.1365-246X.1991.tb06343.x.
     """
-    Cs = (
-        ((1.0, 0.0, 0.0),
-         (0.0, 1.0, 0.0),
-         (0.0, 0.0, 1.0)),
-        ((-1.0, 0.0, 0.0),
-         (0.0, -1.0, 0.0),
-         (0.0, 0.0, 1.0)),
-        ((1.0, 0.0, 0.0),
-         (0.0, -1.0, 0.0),
-         (0.0, 0.0, -1.0)),
-        ((-1.0, 0.0, 0.0),
-         (0.0, 1.0, 0.0),
-         (0.0, 0.0, -1.0)),
-    )
-    angles = []
-    for C in Cs:
-        PtQC = dots(P, transpose(Q), C)
-        # If `PtQC[0][0] + PtQC[1][1] + PtQC[2][2] + 1 < 0` (when inaccurate input), replace it by 0.
-        # This replacement may not cause any problematic result since:
-        # 1) If the term is near 0, angle is near π.
-        # 2) The minimum rotation angle cannot exceed 120 degrees (Kagan, 1990).
-        q0 = _math.sqrt(max(PtQC[0][0] + PtQC[1][1] + PtQC[2][2] + 1, 0))/2
-        angles.append(2*_math.acos(q0))
-    return angles
+
+    PtQ = dot(P, transpose(Q))
+    # If `diag(dot(PtQ, R)) + 1 < 0` (when input is inaccurate), replace it by 0.
+    # This replacement may not cause any problematic result since:
+    # 1) If the term is near 0, angle is near π.
+    # 2) The minimum rotation angle cannot exceed 120 degrees (Kagan, 1990).
+    return [2*_math.acos(_math.sqrt(max(sum(diag(dot(PtQ, R))) + 1, 0))/2)
+            for R in _INVARIANT_ROTATIONS_FOR_DOUBLE_COUPLE]
+
+
+def diag(m):
+    return [m[i][i] for i in range(min(len(m), len(m[0])))]
 
 
 def dots(*ms):
