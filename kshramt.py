@@ -458,7 +458,6 @@ class TestAction(_argparse.Action):
                          nargs=0,
                          help=help)
 
-
     def __call__(self, parser, namespace, values, option_string=None):
         _unittest.main(argv=_sys.argv[:1])
         parser.exit()
@@ -572,7 +571,6 @@ class _Tester(_unittest.TestCase):
                                    (0.5, 1),
                                    (1, 0)],
                                   False))
-
 
     def test_each_cons(self):
         with self.assertRaises(AssertionError):
@@ -702,7 +700,7 @@ class _Tester(_unittest.TestCase):
         self.assertEqual(list(flatten([1, 2])), [1, 2])
         self.assertEqual(list(flatten([1, [2, 3]])), [1, 2, 3])
         self.assertEqual(list(flatten(['ab'])), ['ab'])
-        self.assertEqual(tuple(sorted(flatten((1, 2, (3, [4, set([5, 6]), 7 ], [8, 9]))))),
+        self.assertEqual(tuple(sorted(flatten((1, 2, (3, [4, set([5, 6]), 7], [8, 9]))))),
                          tuple(sorted((1, 2, 3, 4, 5, 6, 7, 8, 9))))
 
     def test_make_fixed_format_parser(self):
