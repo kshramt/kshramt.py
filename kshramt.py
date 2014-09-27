@@ -89,10 +89,13 @@ def dot(A, B):
     m_range = range(m)
     n_range = range(nA)
     l_range = range(l)
-    return [[sum(A[i][k]*B[k][j]
-                 for k in n_range)
-             for j in l_range]
-            for i in m_range]
+    ret = []
+    for i in m_range:
+        Ai = A[i]
+        ret.append([sum(Ai[k]*B[k][j]
+                        for k in n_range)
+                    for j in l_range])
+    return ret
 
 
 def transpose(A):
