@@ -76,11 +76,11 @@ def diag(m):
     return [m[i][i] for i in range(min(len(m), len(m[0])))]
 
 
-def dots(*ms):
-    return _functools.reduce(dot, ms)
+def dot(*ms):
+    return _functools.reduce(_dot, ms)
 
 
-def dot(A, B):
+def _dot(A, B):
     m = len(A)
     nA = len(A[0])
     nB = len(B)
@@ -491,18 +491,18 @@ class _Tester(_unittest.TestCase):
                           [2, 5],
                           [3, 6]])
 
-    def test_dots(self):
+    def test_dot(self):
         A = ((1, 2),
              (3, 4))
         B = [[5, 6],
              (7, 8)]
-        self.assertEqual(dots(A, B),
+        self.assertEqual(dot(A, B),
                          [[19, 22],
                           [43, 50]])
         A = ([1],
              [2])
         B = [(3, 4)]
-        self.assertEqual(dots(A, B),
+        self.assertEqual(dot(A, B),
                          [[3, 4],
                           [6, 8]])
 
