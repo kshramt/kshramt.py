@@ -100,8 +100,8 @@ def transpose(A):
     n = len(A[0])
     m_range = range(m)
     n_range = range(n)
-    return [[A[j][i] for j in n_range]
-            for i in m_range]
+    return [[A[i][j] for i in m_range]
+            for j in n_range]
 
 
 def binning(xs, bins):
@@ -481,6 +481,12 @@ class _Tester(_unittest.TestCase):
         self.assertEqual(transpose(A),
                          [[1, 3],
                           [2, 4]])
+        A = ((1, 2, 3),
+             (4, 5, 6))
+        self.assertEqual(transpose(A),
+                         [[1, 4],
+                          [2, 5],
+                          [3, 6]])
 
     def test_dots(self):
         A = ((1, 2),
