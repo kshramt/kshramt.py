@@ -496,6 +496,12 @@ class _Tester(_unittest.TestCase):
         self.assertEqual(dots(A, B),
                          [[19, 22],
                           [43, 50]])
+        A = ([1],
+             [2])
+        B = [(3, 4)]
+        self.assertEqual(dots(A, B),
+                         [[3, 4],
+                          [6, 8]])
 
     def test_binning(self):
         bins = 10
