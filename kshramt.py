@@ -20,6 +20,15 @@ class Error(Exception):
 TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
+def sign(x):
+    if x > 0:
+        return 1
+    elif x < 0:
+        return -1
+    else:
+        return 0
+
+
 def rad(d):
     return d*_math.pi/180
 
