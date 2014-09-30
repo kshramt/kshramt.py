@@ -313,8 +313,8 @@ def each_cons(xs, n):
     return [xs[i:i+n] for i in range(len(xs) - (n - 1))]
 
 
-def parallel_for(f, *indicess):
-    return reshape(_multiprocessing.Pool().starmap(f, _itertools.product(*indicess)),
+def parallel_for(f, *indicess, commons=()):
+    return reshape(_multiprocessing.Pool().starmap(f, (ijk + commons for ijk in _itertools.product(*indicess))),
                    [len(indices) for indices in indicess])
 
 
