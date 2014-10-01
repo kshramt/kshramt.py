@@ -313,8 +313,8 @@ def each_cons(xs, n):
     return [xs[i:i+n] for i in range(len(xs) - (n - 1))]
 
 
-def parallel_for(f, *indicess, commons=()):
-    return reshape(_multiprocessing.Pool().starmap(f, (ijk + commons for ijk in _itertools.product(*indicess))),
+def parallel_for(f, *indicess, commons=(), chunk_size=1):
+    return reshape(_multiprocessing.Pool().starmap(f, (ijk + commons for ijk in _itertools.product(*indicess)), chunksize=chunk_size),
                    [len(indices) for indices in indicess])
 
 
@@ -613,6 +613,7 @@ class _Tester(_unittest.TestCase):
 
     def test_parallel_for(self):
         self.assertEqual(parallel_for(_fn_for_test_parallel_for, [1, 2], [3, 4, 5]), [[(1, 3), (1, 4), (1, 5)], [(2, 3), (2, 4), (2, 5)]])
+        self.assertEqual(parallel_for(_fn_for_test_parallel_for, [1, 2], [3, 4, 5], chunk_size=3), [[(1, 3), (1, 4), (1, 5)], [(2, 3), (2, 4), (2, 5)]])
 
     def test_reshape(self):
         with self.assertRaises(AssertionError):
