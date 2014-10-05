@@ -133,15 +133,15 @@ def binning(xs, bins):
     for x in xs:
         fi_bin = (x - x_min)/dx
         i_bin = int(fi_bin)
-        if fi_bin != i_bin:
-            ns[i_bin] += 1
-        elif i_bin <= 0:
+        if i_bin <= 0:
             ns[0] += 1
         elif i_bin >= bins:
             ns[-1] += 1
-        else:
+        elif fi_bin == i_bin:
             ns[i_bin] += 1/2
             ns[i_bin - 1] += 1/2
+        else:
+            ns[i_bin] += 1
     return [(x1, x2, n, n/n_xs/dx)
             for (x1, x2), n
             in zip(each_cons(linspace(x_min, x_max, bins + 1), 2), ns)]
