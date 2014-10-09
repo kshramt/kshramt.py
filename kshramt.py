@@ -51,18 +51,18 @@ def _R_theta_phi(theta, phi):
 
 
 _INVARIANT_ROTATIONS_FOR_DIAG = (
-    ((1.0, 0.0, 0.0),
-     (0.0, 1.0, 0.0),
-     (0.0, 0.0, 1.0)),
-    ((-1.0, 0.0, 0.0),
-     (0.0, -1.0, 0.0),
-     (0.0, 0.0, 1.0)),
-    ((1.0, 0.0, 0.0),
-     (0.0, -1.0, 0.0),
-     (0.0, 0.0, -1.0)),
-    ((-1.0, 0.0, 0.0),
-     (0.0, 1.0, 0.0),
-     (0.0, 0.0, -1.0)),
+    ((1, 0, 0),
+     (0, 1, 0),
+     (0, 0, 1)),
+    ((-1, 0, 0),
+     (0, -1, 0),
+     (0, 0, 1)),
+    ((1, 0, 0),
+     (0, -1, 0),
+     (0, 0, -1)),
+    ((-1, 0, 0),
+     (0, 1, 0),
+     (0, 0, -1)),
 )
 def kagan_angles(P, Q):
     """
@@ -77,8 +77,8 @@ def kagan_angles(P, Q):
     # This replacement may not cause any problematic result since:
     # 1) If the term is near 0, angle is near π.
     # 2) The minimum rotation angle cannot exceed 120 degrees (Kagan, 1990).
-    return [2*_math.acos(_math.sqrt(max(sum(diag(dot(PtQ, R))) + 1, 0))/2)
-            for R in _INVARIANT_ROTATIONS_FOR_DIAG]
+    return tuple(2*_math.acos(_math.sqrt(max(sum(diag(dot(PtQ, R))) + 1, 0))/2)
+                 for R in _INVARIANT_ROTATIONS_FOR_DIAG)
 
 
 def diag(m):
