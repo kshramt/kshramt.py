@@ -314,8 +314,11 @@ def each_cons(xs, n):
 
 
 def parallel_for(f, *indicess, commons=(), chunk_size=1):
-    return reshape(_multiprocessing.Pool().starmap(f, (ijk + commons for ijk in _itertools.product(*indicess)), chunksize=chunk_size),
-                   [len(indices) for indices in indicess])
+    p = _multiprocessing.Pool()
+    ret = reshape(p.starmap(f, (ijk + commons for ijk in _itertools.product(*indicess)), chunksize=chunk_size),
+                  [len(indices) for indices in indicess])
+    p.close()
+    return ret
 
 
 def reshape(xs, ns):
