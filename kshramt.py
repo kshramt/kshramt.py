@@ -441,7 +441,7 @@ def list_2d(n_row, n_column, init=None):
             in range(n_row)]
 
 
-def make_fixed_format_parser(fields):
+def make_parse_fixed_width(fields):
     """
     fields: (('density', 3, int),
              ('opacity', 7, float))
@@ -455,12 +455,12 @@ def make_fixed_format_parser(fields):
         _fields.append((name, lower, upper, converter))
         lower = upper
 
-    def fixed_format_parser(s):
+    def parse_fixed_width(s):
         assert len(s) >= upper
         return {name: converter(s[lower:upper])
                 for name, lower, upper, converter
                 in _fields}
-    return fixed_format_parser
+    return parse_fixed_width
 
 
 class TestAction(_argparse.Action):
@@ -733,22 +733,23 @@ class _Tester(_unittest.TestCase):
         self.assertEqual(tuple(sorted(flatten((1, 2, (3, [4, set([5, 6]), 7], [8, 9]))))),
                          tuple(sorted((1, 2, 3, 4, 5, 6, 7, 8, 9))))
 
-    def test_make_fixed_format_parser(self):
+    def test_make_parse_fixed_width(self):
         with self.assertRaises(AssertionError):
-            make_fixed_format_parser((('a', 0, int),))
-        fixed_format_parser\
-            = make_fixed_format_parser((('a', 3, int),
-                                        ('b', 7, lambda x: -int(x))))
-        self.assertEqual(fixed_format_parser(' 325      '),
+            make_parse_fixed_width((('a', 0, int),))
+        parse_fixed_width = make_parse_fixed_width((
+            ('a', 3, int),
+            ('b', 7, lambda x: -int(x))
+        ))
+        self.assertEqual(parse_fixed_width(' 325      '),
                          {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser(' 325      \n'),
+        self.assertEqual(parse_fixed_width(' 325      \n'),
                          {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser(' 32  5    '),
+        self.assertEqual(parse_fixed_width(' 32  5    '),
                          {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser('32   5    abc'),
+        self.assertEqual(parse_fixed_width('32   5    abc'),
                          {'a': 32, 'b': -5})
         with self.assertRaises(AssertionError):
-            fixed_format_parser('123456789')
+            parse_fixed_width('123456789')
 
 
 if __name__ == '__main__':
