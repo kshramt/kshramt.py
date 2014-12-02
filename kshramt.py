@@ -444,14 +444,18 @@ def list_2d(n_row, n_column, init=None):
 def make_parse_fixed_width(fields):
     """
     fields: (('density', 3, int),
+             2, # skip 2 characters
              ('opacity', 7, float))
     """
     lower = 0
     _fields = []
     for field in fields:
-        name, length, converter = field
-        upper = lower + length
-        _fields.append((name, lower, upper, converter))
+        if isinstance(field, int):
+            upper = lower + field
+        else:
+            name, length, converter = field
+            upper = lower + length
+            _fields.append((name, lower, upper, converter))
         lower = upper
 
     def parse_fixed_width(s):
@@ -747,7 +751,15 @@ class _Tester(_unittest.TestCase):
                          {'a': 32, 'b': -5})
         with self.assertRaises(AssertionError):
             parse_fixed_width('123456789')
-
+        parse_fixed_width = make_parse_fixed_width((
+            ('a', 1, int),
+            2,
+            ('b', 3, int),
+        ))
+        self.assertEqual(parse_fixed_width('123456'), {'a': 1, 'b': 456})
+        self.assertEqual(parse_fixed_width('1234567'), {'a': 1, 'b': 456})
+        with self.assertRaises(AssertionError):
+            parse_fixed_width('12345')
 
 if __name__ == '__main__':
     _unittest.main()
