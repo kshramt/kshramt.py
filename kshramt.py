@@ -450,7 +450,6 @@ def make_parse_fixed_width(fields):
     _fields = []
     for field in fields:
         name, length, converter = field
-        assert length >= 1
         upper = lower + length
         _fields.append((name, lower, upper, converter))
         lower = upper
@@ -734,8 +733,6 @@ class _Tester(_unittest.TestCase):
                          tuple(sorted((1, 2, 3, 4, 5, 6, 7, 8, 9))))
 
     def test_make_parse_fixed_width(self):
-        with self.assertRaises(AssertionError):
-            make_parse_fixed_width((('a', 0, int),))
         parse_fixed_width = make_parse_fixed_width((
             ('a', 3, int),
             ('b', 7, lambda x: -int(x))
