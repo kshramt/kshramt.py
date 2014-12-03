@@ -457,9 +457,10 @@ def make_parse_fixed_width(fields):
             upper = lower + length
             _fields.append((name, lower, upper, converter))
         lower = upper
+    record_width = upper
 
     def parse_fixed_width(s):
-        assert len(s) >= upper
+        assert len(s) >= record_width
         return {name: converter(s[lower:upper])
                 for name, lower, upper, converter
                 in _fields}
