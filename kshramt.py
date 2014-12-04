@@ -309,12 +309,12 @@ def is_convex(xys, is_counterclockwise=True):
 
 
 def seq(x1, x2, dx, end=True, comp=_operator.le):
-    xa = x1
-    while comp(xa, x2):
-        yield xa
-        xa += dx
+    x = x1
+    while comp(x, x2):
+        yield x
+        x += dx
     if end:
-        yield xa
+        yield x
 
 
 def each_cons(xs, n):
