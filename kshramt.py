@@ -308,6 +308,15 @@ def is_convex(xys, is_counterclockwise=True):
         return True
 
 
+def seq(x1, x2, dx, end=True, comp=_operator.le):
+    xa = x1
+    while comp(xa, x2):
+        yield xa
+        xa += dx
+    if end:
+        yield xa
+
+
 def each_cons(xs, n):
     assert n >= 1
     if isinstance(xs, _collections.Iterator):
@@ -508,6 +517,15 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_seq(self):
+        self.assertEqual(list(seq(1, 3, 1)), [1, 2, 3, 4])
+        self.assertEqual(list(seq(1, 3, 1, end=False)), [1, 2, 3])
+        self.assertEqual(list(seq(1, 3, 5)), [1, 6])
+        self.assertEqual(list(seq(1, 3, 5, end=False)), [1])
+        self.assertEqual(list(seq(3, 1, -1)), [3])
+        self.assertEqual(list(seq(3, 1, -1, comp=_operator.ge)), [3, 2, 1, 0])
+        self.assertEqual(list(seq(3, 1, -1, end=False, comp=_operator.ge)), [3, 2, 1])
 
     def test_kagan_angles(self):
         d = 0.001
