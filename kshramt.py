@@ -310,6 +310,25 @@ def is_convex(xys, is_counterclockwise=True):
 
 def each_cons(xs, n):
     assert n >= 1
+    if isinstance(xs, _collections.Iterator):
+        return _each_cons_iter(xs, n)
+    else:
+        return _each_cons(xs, n)
+
+
+def _each_cons_iter(xs, n):
+    i = 0
+    ret = []
+    for _ in range(n):
+        ret.append(next(xs))
+    yield ret
+    for x in xs:
+        ret = ret[1:]
+        ret.append(x)
+        yield ret
+
+
+def _each_cons(xs, n):
     return [xs[i:i+n] for i in range(len(xs) - (n - 1))]
 
 
@@ -608,6 +627,8 @@ class _Tester(_unittest.TestCase):
     def test_each_cons(self):
         with self.assertRaises(AssertionError):
             each_cons([1, 2, 3], 0)
+        with self.assertRaises(AssertionError):
+            each_cons(map(int, [1, 2, 3]), 0)
 
         for xs, n, expected in (
                 ([], 1, [],),
@@ -617,6 +638,15 @@ class _Tester(_unittest.TestCase):
                 ([1, 2, 3], 4, [],),
         ):
             self.assertEqual(each_cons(xs, n), expected)
+
+        for xs, n, expected in (
+                ([], 1, [],),
+                ([1, 2, 3], 1, [[1], [2], [3]],),
+                ([1, 2, 3], 2, [[1, 2], [2, 3]],),
+                ([1, 2, 3], 3, [[1, 2, 3]],),
+                ([1, 2, 3], 4, [],),
+        ):
+            self.assertEqual(list(each_cons(map(int, xs), n)), expected)
 
     def test_parallel_for(self):
         self.assertEqual(parallel_for(_fn_for_test_parallel_for, [1, 2], [3, 4, 5]), [[(1, 3), (1, 4), (1, 5)], [(2, 3), (2, 4), (2, 5)]])
