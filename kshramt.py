@@ -309,14 +309,50 @@ def is_convex(xys, is_counterclockwise=True):
         return True
 
 
+def seq(x1, dx, x2=None, end=True, comp=_operator.le):
+    x = x1
+    if x2 is None:
+        while True:
+            yield x
+            x += dx
+    else:
+        while comp(x, x2):
+            yield x
+            x += dx
+        if end:
+            yield x
+
+
 def each_cons(xs, n):
     assert n >= 1
+    if isinstance(xs, _collections.Iterator):
+        return _each_cons_iter(xs, n)
+    else:
+        return _each_cons(xs, n)
+
+
+def _each_cons_iter(xs, n):
+    i = 0
+    ret = []
+    for _ in range(n):
+        ret.append(next(xs))
+    yield ret
+    for x in xs:
+        ret = ret[1:]
+        ret.append(x)
+        yield ret
+
+
+def _each_cons(xs, n):
     return [xs[i:i+n] for i in range(len(xs) - (n - 1))]
 
 
 def parallel_for(f, *indicess, commons=(), chunk_size=1):
-    return reshape(_multiprocessing.Pool().starmap(f, (ijk + commons for ijk in _itertools.product(*indicess)), chunksize=chunk_size),
-                   [len(indices) for indices in indicess])
+    p = _multiprocessing.Pool()
+    ret = reshape(p.starmap(f, (ijk + commons for ijk in _itertools.product(*indicess)), chunksize=chunk_size),
+                  [len(indices) for indices in indicess])
+    p.close()
+    return ret
 
 
 def reshape(xs, ns):
@@ -439,26 +475,30 @@ def list_2d(n_row, n_column, init=None):
             in range(n_row)]
 
 
-def make_fixed_format_parser(fields):
+def make_parse_fixed_width(fields):
     """
     fields: (('density', 3, int),
+             2, # skip 2 characters
              ('opacity', 7, float))
     """
     lower = 0
     _fields = []
     for field in fields:
-        name, length, converter = field
-        assert length >= 1
-        upper = lower + length
-        _fields.append((name, lower, upper, converter))
+        if isinstance(field, int):
+            upper = lower + field
+        else:
+            name, length, converter = field
+            upper = lower + length
+            _fields.append((name, lower, upper, converter))
         lower = upper
+    record_width = upper
 
-    def fixed_format_parser(s):
-        assert len(s) >= upper
+    def parse_fixed_width(s):
+        assert len(s) >= record_width
         return {name: converter(s[lower:upper])
                 for name, lower, upper, converter
                 in _fields}
-    return fixed_format_parser
+    return parse_fixed_width
 
 
 class TestAction(_argparse.Action):
@@ -483,6 +523,15 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_seq(self):
+        self.assertEqual(list(seq(1, 1, 3)), [1, 2, 3, 4])
+        self.assertEqual(list(seq(1, 1, 3, end=False)), [1, 2, 3])
+        self.assertEqual(list(seq(1, 5, 3)), [1, 6])
+        self.assertEqual(list(seq(1, 5, 3, end=False)), [1])
+        self.assertEqual(list(seq(3, -1, 1)), [3])
+        self.assertEqual(list(seq(3, -1, 1, comp=_operator.ge)), [3, 2, 1, 0])
+        self.assertEqual(list(seq(3, -1, 1, end=False, comp=_operator.ge)), [3, 2, 1])
 
     def test_kagan_angles(self):
         d = 0.001
@@ -624,6 +673,8 @@ class _Tester(_unittest.TestCase):
     def test_each_cons(self):
         with self.assertRaises(AssertionError):
             each_cons([1, 2, 3], 0)
+        with self.assertRaises(AssertionError):
+            each_cons(map(int, [1, 2, 3]), 0)
 
         for xs, n, expected in (
                 ([], 1, [],),
@@ -633,6 +684,15 @@ class _Tester(_unittest.TestCase):
                 ([1, 2, 3], 4, [],),
         ):
             self.assertEqual(each_cons(xs, n), expected)
+
+        for xs, n, expected in (
+                ([], 1, [],),
+                ([1, 2, 3], 1, [[1], [2], [3]],),
+                ([1, 2, 3], 2, [[1, 2], [2, 3]],),
+                ([1, 2, 3], 3, [[1, 2, 3]],),
+                ([1, 2, 3], 4, [],),
+        ):
+            self.assertEqual(list(each_cons(map(int, xs), n)), expected)
 
     def test_parallel_for(self):
         self.assertEqual(parallel_for(_fn_for_test_parallel_for, [1, 2], [3, 4, 5]), [[(1, 3), (1, 4), (1, 5)], [(2, 3), (2, 4), (2, 5)]])
@@ -753,23 +813,30 @@ class _Tester(_unittest.TestCase):
         self.assertEqual(tuple(sorted(flatten((1, 2, (3, [4, set([5, 6]), 7], [8, 9]))))),
                          tuple(sorted((1, 2, 3, 4, 5, 6, 7, 8, 9))))
 
-    def test_make_fixed_format_parser(self):
+    def test_make_parse_fixed_width(self):
+        parse_fixed_width = make_parse_fixed_width((
+            ('a', 3, int),
+            ('b', 7, lambda x: -int(x))
+        ))
+        self.assertEqual(parse_fixed_width(' 325      '),
+                         {'a': 32, 'b': -5})
+        self.assertEqual(parse_fixed_width(' 325      \n'),
+                         {'a': 32, 'b': -5})
+        self.assertEqual(parse_fixed_width(' 32  5    '),
+                         {'a': 32, 'b': -5})
+        self.assertEqual(parse_fixed_width('32   5    abc'),
+                         {'a': 32, 'b': -5})
         with self.assertRaises(AssertionError):
-            make_fixed_format_parser((('a', 0, int),))
-        fixed_format_parser\
-            = make_fixed_format_parser((('a', 3, int),
-                                        ('b', 7, lambda x: -int(x))))
-        self.assertEqual(fixed_format_parser(' 325      '),
-                         {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser(' 325      \n'),
-                         {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser(' 32  5    '),
-                         {'a': 32, 'b': -5})
-        self.assertEqual(fixed_format_parser('32   5    abc'),
-                         {'a': 32, 'b': -5})
+            parse_fixed_width('123456789')
+        parse_fixed_width = make_parse_fixed_width((
+            ('a', 1, int),
+            2,
+            ('b', 3, int),
+        ))
+        self.assertEqual(parse_fixed_width('123456'), {'a': 1, 'b': 456})
+        self.assertEqual(parse_fixed_width('1234567'), {'a': 1, 'b': 456})
         with self.assertRaises(AssertionError):
-            fixed_format_parser('123456789')
-
+            parse_fixed_width('12345')
 
 if __name__ == '__main__':
     _unittest.main()
