@@ -348,7 +348,6 @@ def each_cons(xs, n):
 
 
 def _each_cons_iter(xs, n):
-    i = 0
     ret = []
     for _ in range(n):
         ret.append(next(xs))
