@@ -20,6 +20,23 @@ class Error(Exception):
 TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
+def make_load(record_genertor, parse_record):
+    def load(fp, fail_fn):
+        records = record_genertor(fp)
+        if fail_fn is None:
+            for record in records:
+                yield parse_record(record)
+            else:
+                for record in records:
+                    try:
+                        yield parse_record(record)
+                    except Exception as e:
+                        is_yield, value = fail_fn(record, e)
+                        if is_yield:
+                            yield value
+    return load
+
+
 def sign(x):
     if x > 0:
         return 1
