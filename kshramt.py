@@ -138,17 +138,18 @@ def transpose(A):
             for j in n_range]
 
 
-def binning(xs, bins):
+def binning(xs, bins, x_min=None, x_max=None):
     if bins < 1:
         return []
     n_xs = len(xs)
     if n_xs < 1:
         return []
     elif n_xs == 1:
-        x_min = xs[0] - 1/2
-        x_max = xs[0] + 1/2
+        x_min = xs[0] - 1/2 if x_min is None else x_min
+        x_max = xs[0] + 1/2 if x_max is None else x_max
     else:
-        x_min, x_max = min_max(xs)
+        x_min = min(xs) if x_min is None else x_min
+        x_max = max(xs) if x_max is None else x_max
     dx = (x_max - x_min)/bins
     assert 0 < max(abs(x_min), abs(x_max))*_sys.float_info.epsilon <= dx
     ns = [0 for _ in range(bins)]
@@ -164,7 +165,7 @@ def binning(xs, bins):
             ns[i_bin - 1] += 1/2
         else:
             ns[i_bin] += 1
-    return [(x1, x2, n, n/n_xs/dx)
+    return [(x1, x2, n, n/n_xs, n/n_xs/dx)
             for (x1, x2), n
             in zip(each_cons(linspace(x_min, x_max, bins + 1), 2), ns)]
 
@@ -606,6 +607,28 @@ class _Tester(_unittest.TestCase):
             self.assertAlmostEqual(b[1], i + 2)
             self.assertAlmostEqual(b[2], 1)
             self.assertAlmostEqual(b[3], 1/11)
+
+        r = -1.5
+        s = 6.5
+        bs = binning([0, 1, 2, 3, 4, 5], 8, r, s)
+        x1, x2, n, np, p = bs[0]
+        self.assertAlmostEqual(x1, r)
+        self.assertAlmostEqual(x2, r + 1)
+        self.assertAlmostEqual(n, 0)
+        self.assertAlmostEqual(np, 0)
+        self.assertAlmostEqual(p, 0)
+        x1, x2, n, np, p = bs[-1]
+        self.assertAlmostEqual(x1, s - 1)
+        self.assertAlmostEqual(x2, s)
+        self.assertAlmostEqual(n, 0)
+        self.assertAlmostEqual(np, 0)
+        self.assertAlmostEqual(p, 0)
+        for i, (x1, x2, n, np, p) in enumerate(bs[1:-1]):
+            self.assertAlmostEqual(x1, r + i + 1)
+            self.assertAlmostEqual(x2, r + i + 2)
+            self.assertAlmostEqual(n, 1)
+            self.assertAlmostEqual(np, 1/6)
+            self.assertAlmostEqual(p, 1/6)
 
     def test_linspace(self):
         for x, y in zip(linspace(0, 10, 11), list(range(11))):
