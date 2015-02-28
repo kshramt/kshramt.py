@@ -20,6 +20,11 @@ class Error(Exception):
 TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
+def mapcat(f, xs):
+    for fx in map(f, xs):
+        yield from fx
+
+
 def make_load(record_genertor, parse_record):
     def load(fp, fail_fn):
         records = record_genertor(fp)
@@ -538,6 +543,9 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_mapcat(self):
+        self.assertEqual(list(mapcat(lambda xs: map(int, xs), [['1', '2'], [], ['3']])), [1, 2, 3])
 
     def test_seq(self):
         self.assertEqual(list(seq(1, 1, 3)), [1, 2, 3, 4])
