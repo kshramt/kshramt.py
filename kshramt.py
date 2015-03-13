@@ -21,8 +21,14 @@ TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
 def mapcat(f, xs):
-    for fx in map(f, xs):
-        yield from fx
+    return concat(map(f, xs))
+
+
+def concat(xss):
+    for xs in xss:
+        yield from xs
+
+
 
 
 def make_load(record_genertor, parse_record):
