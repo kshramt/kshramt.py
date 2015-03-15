@@ -509,6 +509,7 @@ def make_parse_fixed_width(fields):
              ('opacity', 7, float))
     """
     lower = 0
+    upper_max = 0
     _fields = []
     for field in fields:
         if isinstance(field, int):
@@ -517,8 +518,10 @@ def make_parse_fixed_width(fields):
             name, length, converter = field
             upper = lower + length
             _fields.append((name, lower, upper, converter))
+        if upper > upper_max:
+            upper_max = upper
         lower = upper
-    record_width = upper
+    record_width = upper_max
 
     def parse_fixed_width(s):
         assert len(s) >= record_width
