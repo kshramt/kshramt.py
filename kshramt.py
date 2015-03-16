@@ -31,20 +31,20 @@ def concat(xss):
 
 
 
-def make_load(record_genertor, parse_record):
-    def load(fp, fail_fn):
-        records = record_genertor(fp)
-        if fail_fn is None:
-            for record in records:
-                yield parse_record(record)
-            else:
-                for record in records:
-                    try:
-                        yield parse_record(record)
-                    except Exception as e:
-                        is_yield, value = fail_fn(record, e)
-                        if is_yield:
-                            yield value
+def make_load(record_genertor, parse_record, error_f=None):
+    if error_f is None:
+        def load(fp):
+            for r in record_genertor(fp):
+                yield parse_record(r)
+    else:
+        def load(fp):
+            for r in record_genertor(fp):
+                try:
+                    yield parse_record(r)
+                except Exception as e:
+                    is_yield, v = error_f(r, e)
+                    if is_yield:
+                        yield v
     return load
 
 
