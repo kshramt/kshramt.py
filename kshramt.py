@@ -31,6 +31,42 @@ def concat(xss):
 
 
 
+def dump_structured_points_3(vs, dx=1, dy=1, dz=1, x0=0, y0=0, z0=0, dtype='FLOAT', fp=_sys.stdout):
+    assert dx > 0
+    assert dy > 0
+    assert dz > 0
+    nx = len(vs)
+    assert nx >= 1
+    ny = len(vs[0])
+    assert ny >= 1
+    nz = len(vs[0][0])
+    assert nz >= 1
+    print("""# vtk DataFile Version 3.0
+voxel
+ASCII
+DATASET STRUCTURED_POINTS
+DIMENSIONS {nx} {ny} {nz}
+ORIGIN {x0} {y0} {z0}
+SPACING {dx} {dy} {dz}
+POINT_DATA {n}
+SCALARS v {dtype}
+LOOKUP_TABLE default""".format(
+    nx=nx,
+    ny=ny,
+    nz=nz,
+    x0=x0,
+    y0=y0,
+    z0=z0,
+    dx=dx,
+    dy=dy,
+    dz=dz,
+    n=nx*ny*nz,
+    dtype=dtype,
+), file=fp)
+    for iz in range(nz):
+        for iy in range(ny):
+            for ix in range(nx):
+                print(vs[ix][iy][iz], file=fp)
 
 
 def make_load(record_generator, parse_record):
