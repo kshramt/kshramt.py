@@ -209,9 +209,9 @@ def binning(xs, bins, x_min=None, x_max=None):
             ns[i_bin - 1] += 1/2
         else:
             ns[i_bin] += 1
-    return [(x1, x2, n, n/n_xs, n/n_xs/dx)
-            for (x1, x2), n
-            in zip(each_cons(linspace(x_min, x_max, bins + 1), 2), ns)]
+    return dx, [(x1, x2, n, n/n_xs)
+                for (x1, x2), n
+                in zip(each_cons(linspace(x_min, x_max, bins + 1), 2), ns)]
 
 
 def min_max(xs):
@@ -638,7 +638,8 @@ class _Tester(_unittest.TestCase):
 
     def test_binning(self):
         bins = 10
-        bs = binning([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], bins)
+        dx, bs = binning([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], bins)
+        self.assertAlmostEqual(dx, 1)
         b0 = bs[0]
         self.assertAlmostEqual(b0[0], 0)
         self.assertAlmostEqual(b0[1], 1)
@@ -657,25 +658,23 @@ class _Tester(_unittest.TestCase):
 
         r = -1.5
         s = 6.5
-        bs = binning([0, 1, 2, 3, 4, 5], 8, r, s)
-        x1, x2, n, np, p = bs[0]
+        dx, bs = binning([0, 1, 2, 3, 4, 5], 8, r, s)
+        self.assertAlmostEqual(dx, (s - r)/8)
+        x1, x2, n, np = bs[0]
         self.assertAlmostEqual(x1, r)
         self.assertAlmostEqual(x2, r + 1)
         self.assertAlmostEqual(n, 0)
         self.assertAlmostEqual(np, 0)
-        self.assertAlmostEqual(p, 0)
-        x1, x2, n, np, p = bs[-1]
+        x1, x2, n, np = bs[-1]
         self.assertAlmostEqual(x1, s - 1)
         self.assertAlmostEqual(x2, s)
         self.assertAlmostEqual(n, 0)
         self.assertAlmostEqual(np, 0)
-        self.assertAlmostEqual(p, 0)
-        for i, (x1, x2, n, np, p) in enumerate(bs[1:-1]):
+        for i, (x1, x2, n, np) in enumerate(bs[1:-1]):
             self.assertAlmostEqual(x1, r + i + 1)
             self.assertAlmostEqual(x2, r + i + 2)
             self.assertAlmostEqual(n, 1)
             self.assertAlmostEqual(np, 1/6)
-            self.assertAlmostEqual(p, 1/6)
 
     def test_linspace(self):
         for x, y in zip(linspace(0, 10, 11), list(range(11))):
