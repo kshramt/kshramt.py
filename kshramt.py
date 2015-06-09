@@ -198,6 +198,8 @@ def binning(xs, bins, x_min=None, x_max=None):
     assert 0 < max(abs(x_min), abs(x_max))*_sys.float_info.epsilon <= dx
     ns = [0 for _ in range(bins)]
     for x in xs:
+        if x < x_min or x_max < x:
+            continue
         fi_bin = (x - x_min)/dx
         i_bin = int(fi_bin)
         if i_bin <= 0:
