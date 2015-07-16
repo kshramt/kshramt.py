@@ -10,6 +10,7 @@ PYFLAKES := pyflakes
 # Configurations
 .SUFFIXES:
 .DELETE_ON_ERROR:
+.SECONDARY:
 .ONESHELL:
 export SHELL := /bin/bash
 export SHELLOPTS := pipefail:errexit:nounset:noclobber
