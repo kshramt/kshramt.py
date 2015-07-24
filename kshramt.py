@@ -339,9 +339,9 @@ def _unit_middle_point(p1, p2):
     return x/r, y/r, z/r
 
 
-def is_in_convex_hull(px, py, xys, is_counterclockwise=True):
+def is_in_convex_polygon(px, py, xys, is_counterclockwise=True):
     if not is_counterclockwise:
-        return is_in_convex_hull(px, py, list(reversed(xys)))
+        return is_in_convex_polygon(px, py, list(reversed(xys)))
     else:
         assert is_convex(xys, is_counterclockwise)
         x1, y1 = xys[0]
@@ -698,12 +698,12 @@ class _Tester(_unittest.TestCase):
                                   (0.7071067811865475, 0.7071067811865475, 0.0),
                                   (0.0, 0.7071067811865475, 0.7071067811865475)])
 
-    def test_is_in_convex_hull(self):
+    def test_is_in_convex_polygon(self):
         with self.assertRaises(AssertionError):
-            is_in_convex_hull(1, 2, [(0, 0),
+            is_in_convex_polygon(1, 2, [(0, 0),
                                      (1, 0),
                                      (1, -1)])
-        self.assertTrue(is_in_convex_hull(0, 0, [(0, 0),
+        self.assertTrue(is_in_convex_polygon(0, 0, [(0, 0),
                                                  (1, 0),
                                                  (1, 1)]))
         xys = [(0, 0),
@@ -711,9 +711,9 @@ class _Tester(_unittest.TestCase):
                (2, 1),
                (2, 2),
                (1, 2)]
-        self.assertTrue(is_in_convex_hull(1, 1, xys))
-        self.assertTrue(is_in_convex_hull(1, 1, list(reversed(xys)), False))
-        self.assertFalse(is_in_convex_hull(3, 3, xys))
+        self.assertTrue(is_in_convex_polygon(1, 1, xys))
+        self.assertTrue(is_in_convex_polygon(1, 1, list(reversed(xys)), False))
+        self.assertFalse(is_in_convex_polygon(3, 3, xys))
 
     def test_is_convex(self):
         with self.assertRaises(AssertionError):
