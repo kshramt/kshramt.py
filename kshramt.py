@@ -3,7 +3,7 @@ import argparse as _argparse
 import unittest as _unittest
 import collections as _collections
 import pprint as _pprint
-import math as _math
+from math import sin, cos, acos, sqrt, hypot, pi, log10, ceil, floor
 import functools as _functools
 import operator as _operator
 import multiprocessing as _multiprocessing
@@ -96,18 +96,18 @@ def sign(x):
 
 
 def rad(d):
-    return d*_math.pi/180
+    return d*pi/180
 
 
 def deg(r):
-    return r*180/_math.pi
+    return r*180/pi
 
 
 def _R_theta_phi(theta, phi):
-    ct = _math.cos(theta)
-    st = _math.sin(theta)
-    cp = _math.cos(phi)
-    sp = _math.sin(phi)
+    ct = cos(theta)
+    st = sin(theta)
+    cp = cos(phi)
+    sp = sin(phi)
     return dot(((ct, 0, -st),
                 (0, 1, 0),
                 (st, 0, ct)),
@@ -143,7 +143,7 @@ def kagan_angles(P, Q):
     # This replacement may not cause any problematic result since:
     # 1) If the term is near 0, angle is near π.
     # 2) The minimum rotation angle cannot exceed 120 degrees (Kagan, 1990).
-    return tuple(2*_math.acos(_math.sqrt(max(sum(diag(dot(PtQ, R))) + 1, 0))/2)
+    return tuple(2*acos(sqrt(max(sum(diag(dot(PtQ, R))) + 1, 0))/2)
                  for R in _INVARIANT_ROTATIONS_FOR_DIAG)
 
 
@@ -238,16 +238,16 @@ def linspace(start, stop, num=50):
     return ret
 
 
-GOLDEN_RATIO = (1 + _math.sqrt(5))/2
+GOLDEN_RATIO = (1 + sqrt(5))/2
 _SPHERE_MESH_BASES = {
     4: ([(0, 1, 2),
          (1, 2, 3),
          (2, 3, 0),
          (0, 1, 3)],
         [(0, 0, 1),
-         (2*_math.sqrt(2)/3, 0, -1/3),
-         (-_math.sqrt(2)/3, _math.sqrt(2/3), -1/3),
-         (-_math.sqrt(2)/3, -_math.sqrt(2/3), -1/3)],
+         (2*sqrt(2)/3, 0, -1/3),
+         (-sqrt(2)/3, sqrt(2/3), -1/3),
+         (-sqrt(2)/3, -sqrt(2/3), -1/3)],
         1),
     8: ([(4, 0, 1),
          (4, 1, 2),
@@ -297,7 +297,7 @@ _SPHERE_MESH_BASES = {
           (GOLDEN_RATIO, 0, -1),
           (-GOLDEN_RATIO, 0, 1),
           (-GOLDEN_RATIO, 0, -1)],
-         _math.sqrt(1**2 + GOLDEN_RATIO**2)),
+         sqrt(1**2 + GOLDEN_RATIO**2)),
 }
 def sphere_mesh(n=0, r=1, base=20):
     assert n >= 0
@@ -335,7 +335,7 @@ def _unit_middle_point(p1, p2):
     x = (x1 + x2)/2
     y = (y1 + y2)/2
     z = (z1 + z2)/2
-    r = _math.sqrt(x*x + y*y + z*z)
+    r = sqrt(x*x + y*y + z*z)
     return x/r, y/r, z/r
 
 
@@ -358,7 +358,7 @@ def is_in_polygon(x, y, xs, ys):
         y1 = ys[i]
         x2 = xs[i + 1]
         y2 = ys[i + 1]
-        th += sign(x1*y2 - y1*x2)*_math.acos((x1*x2 + y1*y2)/(_math.hypot(x1, y1)*_math.hypot(x2, y2)))
+        th += sign(x1*y2 - y1*x2)*acos((x1*x2 + y1*y2)/(hypot(x1, y1)*hypot(x2, y2)))
     return abs(th) > 1
 
 
@@ -492,7 +492,7 @@ def profiled_memoize(f):
 
 def _get_interval(lx):
     assert lx > 0
-    dx = 10**(_math.ceil(_math.log10(lx)) - 1)
+    dx = 10**(ceil(log10(lx)) - 1)
     if lx > 5*dx:
         return dx
     elif lx > 2*dx:
@@ -504,7 +504,7 @@ def _get_interval(lx):
 def _get_lower_limit(x, dx,
                      padding_ratio=TICK_INTERVAL_PADDING_RATIO):
     assert dx > 0
-    lower = _math.floor(x/dx)*dx
+    lower = floor(x/dx)*dx
     if x <= lower + dx*padding_ratio:
         lower -= dx
     return lower
@@ -513,7 +513,7 @@ def _get_lower_limit(x, dx,
 def _get_upper_limit(x, dx,
                      padding_ratio=TICK_INTERVAL_PADDING_RATIO):
     assert dx > 0
-    upper = _math.ceil(x/dx)*dx
+    upper = ceil(x/dx)*dx
     if x >= upper - dx*padding_ratio:
         upper += dx
     return upper
@@ -631,7 +631,7 @@ class _Tester(_unittest.TestCase):
 
     def test_kagan_angles(self):
         d = 0.001
-        self.assertTrue(abs(deg(min(kagan_angles(_R_theta_phi(rad(30), rad(20)), _R_theta_phi(rad(30 + d), rad(20 + d)))) - d*_math.sqrt(2)) <= d*1e-3))
+        self.assertTrue(abs(deg(min(kagan_angles(_R_theta_phi(rad(30), rad(20)), _R_theta_phi(rad(30 + d), rad(20 + d)))) - d*sqrt(2)) <= d*1e-3))
 
     def test_transpose(self):
         A = ((1, 2),
