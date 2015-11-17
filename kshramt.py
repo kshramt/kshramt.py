@@ -339,6 +339,29 @@ def _unit_middle_point(p1, p2):
     return x/r, y/r, z/r
 
 
+def is_in_polygon(x, y, xs, ys):
+    """Winding-number algorithm
+    (x1, y1)-(x2, y2)-...-(xn, yn)-(x1, y1)
+    points should be counterclockwise and should not intersect.
+    """
+
+    xs = [xi - x for xi in xs]
+    n = len(xs)
+    assert n > 2
+    xs.append(xs[0])
+    ys = [yi - y for yi in ys]
+    assert len(ys) == n
+    ys.append(ys[0])
+    th = 0
+    for i in range(n):
+        x1 = xs[i]
+        y1 = ys[i]
+        x2 = xs[i + 1]
+        y2 = ys[i + 1]
+        th += sign(x1*y2 - y1*x2)*_math.acos((x1*x2 + y1*y2)/(_math.hypot(x1, y1)*_math.hypot(x2, y2)))
+    return abs(th) > 1
+
+
 def is_in_convex_polygon(px, py, xys, is_counterclockwise=True):
     if not is_counterclockwise:
         return is_in_convex_polygon(px, py, list(reversed(xys)))
@@ -697,6 +720,18 @@ class _Tester(_unittest.TestCase):
                                   (0.7071067811865475, 0.0, 0.7071067811865475),
                                   (0.7071067811865475, 0.7071067811865475, 0.0),
                                   (0.0, 0.7071067811865475, 0.7071067811865475)])
+
+    def test_is_in_polygon(self):
+        with self.assertRaises(AssertionError):
+            is_in_polygon(1, 2, [1, 2], [1, 2])
+        with self.assertRaises(AssertionError):
+            is_in_polygon(1, 2, [1, 2, 3], [1, 2, 3, 4])
+        self.assertTrue(is_in_polygon(1, 2, [0, 2, 2, 0], [0, 0, 3, 3]))
+        self.assertFalse(is_in_polygon(1, 2, [0, 2, 2, 0], [0, 0, 1, 1]))
+        self.assertTrue(is_in_polygon(1, 0, [0, 2, 2, 0], [0, 0, 2, 2]))
+        self.assertTrue(is_in_polygon(2, 1, [0, 2, 2, 0], [0, 0, 2, 2]))
+        self.assertTrue(is_in_polygon(1, 2, [0, 2, 2, 0], [0, 0, 2, 2]))
+        self.assertTrue(is_in_polygon(0, 1, [0, 2, 2, 0], [0, 0, 2, 2]))
 
     def test_is_in_convex_polygon(self):
         with self.assertRaises(AssertionError):
