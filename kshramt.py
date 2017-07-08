@@ -37,12 +37,12 @@ class subplots:
 class rcparams:
     def __init__(self, *args):
         assert len(args)%2 == 0
-        self.params = {args[2*i + 0]: args[2*i + 1] for i in range(len(args)//2)}
+        self.params = ((args[2*i + 0], args[2*i + 1]) for i in range(len(args)//2))
 
     def __enter__(self):
         import matplotlib
         self.rcparams_orig = list(matplotlib.rcParams.items())
-        for k, v in self.params.items():
+        for k, v in self.params:
             matplotlib.rcParams[k] = v
 
     def __exit__(self, typ, val, traceback):
