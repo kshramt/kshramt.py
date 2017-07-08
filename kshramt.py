@@ -47,7 +47,7 @@ class rcparams:
 
     def __exit__(self, typ, val, traceback):
         import matplotlib
-        matplotlib.rcParams = matplotlib.RcParams()
+        matplotlib.rcParams.clear()
         for k, v in self.rcparams_orig:
             matplotlib.rcParams[k] = v
 
