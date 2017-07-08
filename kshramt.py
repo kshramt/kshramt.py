@@ -21,7 +21,6 @@ TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
 class subplots:
-
     def __init__(self, **kwargs):
         import matplotlib.pyplot
         self.fig, self.axs = matplotlib.pyplot.subplots(**kwargs)
