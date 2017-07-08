@@ -51,13 +51,13 @@ class rcparams:
             matplotlib.rcParams[k] = v
 
 
-def split_dt(ts, xs, dt, t_min):
-    assert len(ts) == len(xs)
+def split_dt(ts, xss, dt, t_min):
+    assert all(len(ts) == len(xs) for xs in xss)
     from scipy import searchsorted
     t1, t2 = t_min, t_min + dt
     i1, i2 = searchsorted(ts, t1), searchsorted(ts, t2)
     while True:
-        yield ts[i1:i2], xs[i1:i2]
+        yield ts[i1:i2], tuple(xs[i1:i2] for xs in xss)
         t2 += dt
         i1, i2 = i2, searchsorted(ts, t2)
 
@@ -684,8 +684,8 @@ class _Tester(_unittest.TestCase):
     def test_split_dt(self):
         import itertools
         self.assertEqual(
-            list(itertools.islice(split_dt([0, 1, 1.1], [4, 5, 5.1], 0.5, -0.6), 5)),
-            [([], []), ([0], [4]), ([], []), ([1, 1.1], [5, 5.1]), ([], [])],
+            list(itertools.islice(split_dt([0, 1, 1.1], ([4, 5, 5.1],), 0.5, -0.6), 5)),
+            [([], ([],)), ([0], ([4],)), ([], ([],)), ([1, 1.1], ([5, 5.1],)), ([], ([],))],
         )
 
     def test_split(self):
