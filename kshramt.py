@@ -380,8 +380,19 @@ def is_in_polygon(x, y, xs, ys):
         y1 = ys[i]
         x2 = xs[i + 1]
         y2 = ys[i + 1]
-        th += sign(x1*y2 - y1*x2)*acos((x1*x2 + y1*y2)/(hypot(x1, y1)*hypot(x2, y2)))
+        th += sign(x1*y2 - y1*x2)*_acos((x1*x2 + y1*y2)/(hypot(x1, y1)*hypot(x2, y2)))
     return abs(th) > 1
+
+
+def _acos(x):
+    try:
+        return acos(x)
+    except ValueError:
+        assert abs(x) < 1.000001
+        if x > 0:
+            return 0
+        else:
+            return pi
 
 
 def is_in_convex_polygon(px, py, xys, is_counterclockwise=True):
@@ -769,6 +780,12 @@ class _Tester(_unittest.TestCase):
         self.assertTrue(is_in_polygon(2, 1, [0, 2, 2, 0], [0, 0, 2, 2]))
         self.assertTrue(is_in_polygon(1, 2, [0, 2, 2, 0], [0, 0, 2, 2]))
         self.assertTrue(is_in_polygon(0, 1, [0, 2, 2, 0], [0, 0, 2, 2]))
+        self.assertFalse(is_in_polygon(
+            135.9675,
+            35.5805,
+            [130.5, 131, 131.6, 131.5, 130.3],
+            [32.3, 32.6, 33.4, 33.5, 32.8],
+        ))
 
     def test_is_in_convex_polygon(self):
         with self.assertRaises(AssertionError):
