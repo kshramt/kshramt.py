@@ -20,6 +20,30 @@ class Error(Exception):
 TICK_INTERVAL_PADDING_RATIO = 0.1
 
 
+def split_dt(ts, xs, dt, t_min):
+    assert len(ts) == len(xs)
+    from scipy import searchsorted
+    t1, t2 = t_min, t_min + dt
+    i1, i2 = searchsorted(ts, t1), searchsorted(ts, t2)
+    while True:
+        yield ts[i1:i2], xs[i1:i2]
+        t2 += dt
+        i1, i2 = i2, searchsorted(ts, t2)
+
+
+def split(xs, n):
+    assert n > 0
+    ret = [None for _ in range(n)]
+    i = 0
+    for x in xs:
+        ret[i] = x
+        i += 1
+        if i%n == 0:
+            yield ret
+            ret = [None for _ in range(n)]
+            i = 0
+
+
 def mapcat(f, xs):
     return concat(map(f, xs))
 
@@ -27,8 +51,6 @@ def mapcat(f, xs):
 def concat(xss):
     for xs in xss:
         yield from xs
-
-
 
 
 def dump_structured_points_3(vs, dx=1, dy=1, dz=1, x0=0, y0=0, z0=0, dtype='FLOAT', fp=_sys.stdout):
@@ -616,6 +638,21 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_split_dt(self):
+        import itertools
+        self.assertEqual(
+            list(itertools.islice(split_dt([0, 1, 1.1], [4, 5, 5.1], 0.5, -0.6), 5)),
+            [([], []), ([0], [4]), ([], []), ([1, 1.1], [5, 5.1]), ([], [])],
+        )
+
+    def test_split(self):
+        self.assertEqual(list(split(range(5), 2)), [[0, 1], [2, 3]])
+        self.assertEqual(list(split(range(0), 2)), [])
+        self.assertEqual(list(split(range(1), 2)), [])
+        self.assertEqual(list(split(range(6), 3)), [[0, 1, 2], [3, 4, 5]])
+        with self.assertRaises(AssertionError):
+            list(split(range(5), 0))
 
     def test_mapcat(self):
         self.assertEqual(list(mapcat(lambda xs: map(int, xs), [['1', '2'], [], ['3']])), [1, 2, 3])
