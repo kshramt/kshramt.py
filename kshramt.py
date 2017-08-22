@@ -488,8 +488,11 @@ def each_cons(xs, n):
 
 def _each_cons_iter(xs, n):
     ret = []
-    for _ in range(n):
-        ret.append(next(xs))
+    try:
+        for _ in range(n):
+            ret.append(next(xs))
+    except StopIteration:
+        return
     yield ret
     for x in xs:
         ret = ret[1:]
