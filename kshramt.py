@@ -51,6 +51,23 @@ class rcparams:
             matplotlib.rcParams[k] = v
 
 
+def shell_escape(s):
+    import io
+    fp = io.StringIO()
+    sq = "'" + '"' + "'" + '"' + "'"
+    dollar = "'" + "'" + '$' + "'" + "'"
+    print("'", end='', file=fp)
+    for c in s:
+        if c == "'":
+            print(sq, end='', file=fp)
+        elif c == '$':
+            print(dollar, end='', file=fp)
+        else:
+            print(c, end='', file=fp)
+    print("'", end='', file=fp)
+    return fp.getvalue()
+
+
 def split_dt(ts, xss, dt, t_min):
     assert all(len(ts) == len(xs) for xs in xss)
     from scipy import searchsorted
@@ -683,6 +700,15 @@ def _fn_for_test_parallel_for(x, y):
 
 
 class _Tester(_unittest.TestCase):
+
+    def test_shell_escape(self):
+        for s, ex in (
+            ("", "''"),
+            ("\\", "'\\'"),
+            ("\n$", "'\n''$'''"),
+            ("a'b'", "'a'\"'\"'b'\"'\"''"),
+        ):
+            self.assertEqual(shell_escape(s), ex)
 
     def test_split_dt(self):
         import itertools
