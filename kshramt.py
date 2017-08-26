@@ -34,6 +34,9 @@ class subplots:
 
 
 class rcparams:
+    """
+    Use `plt.rc_context` instead of this.
+    """
     def __init__(self, *args):
         assert len(args)%2 == 0
         self.params = ((args[2*i + 0], args[2*i + 1]) for i in range(len(args)//2))
@@ -52,6 +55,9 @@ class rcparams:
 
 
 def shell_escape(s):
+    """
+    Use `shlex.quote` instead of this
+    """
     import io
     fp = io.StringIO()
     sq = "'" + '"' + "'" + '"' + "'"
