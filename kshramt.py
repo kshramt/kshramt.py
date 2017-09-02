@@ -54,6 +54,11 @@ class rcparams:
             matplotlib.rcParams[k] = v
 
 
+def doseq(g):
+    for _ in g:
+        pass
+
+
 def shell_escape(s):
     """
     Use `shlex.quote` instead of this
