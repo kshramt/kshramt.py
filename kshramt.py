@@ -54,9 +54,9 @@ class rcparams:
             matplotlib.rcParams[k] = v
 
 
-def doseq(g):
-    for _ in g:
-        pass
+def consume(g):
+    import collections
+    collections.deque(g, maxlen=0)
 
 
 def shell_escape(s):
