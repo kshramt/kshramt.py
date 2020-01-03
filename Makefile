@@ -1,11 +1,8 @@
 # Constants
 DEPS :=
 
-export MY_PYTHON ?= python3
+export MY_PYTHON ?= venv/bin/python3
 PYTHON := $(MY_PYTHON)
-export MY_RUBY ?= ruby2
-RUBY := $(MY_RUBY)
-PYFLAKES := pyflakes
 
 # Configurations
 .SUFFIXES:
@@ -36,7 +33,6 @@ build: deps
 test/kshramt.py.tested: kshramt.py
 	mkdir -p $(@D)
 	$(PYTHON) kshramt.py
-	$(PYFLAKES) kshramt.py
 	touch $@
 
 # Rules
