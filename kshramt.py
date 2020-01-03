@@ -3,14 +3,20 @@ import argparse
 import collections
 import functools
 import itertools
+import logging
 import multiprocessing
 import operator
+import os
 import pprint
 import sys
+import tempfile
 import unittest
 
 
 __version__ = "0.0.20"
+
+
+logger = logging.getLogger(__name__)
 
 
 class Error(Exception):
@@ -18,6 +24,72 @@ class Error(Exception):
 
 
 TICK_INTERVAL_PADDING_RATIO = 0.1
+
+
+class AppendDbV1:
+    def __init__(self, path):
+        mkdir(path)
+        self.path = path
+        self.fp_index = open(jp(path, "index.i64"), "a+b")
+        self.fp_data = open(jp(path, "data.txt"), "a+b")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({repr(self.path)})"
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.fp_index.close()
+        self.fp_data.close()
+
+    def __len__(self):
+        s = os.fstat(self.fp_index.fileno()).st_size
+        if s % 8 != 0:
+            logger.warning("Incompletely written index for %s with %s B.", self.path, s)
+        return s // 8
+
+    def __getitem__(self, i: int):
+        i = range(len(self))[i]
+        ib1, ib2 = self._ib1_of(i), self._ib2_of(i)
+        self.fp_data.seek(ib1)
+        return self.fp_data.read(ib2 - ib1).decode("utf-8")
+
+    def append(self, t: str):
+        b = t.encode("utf-8")
+        l = len(self)
+        ib1 = self._ib1_of(l)
+        self.fp_data.seek(ib1)
+        dib = self.fp_data.write(b)
+        self.fp_index.seek(l * 8)
+        try:
+            self.fp_index.write(self._bytes(ib1 + dib))
+        except OSError:
+            self.fp_index.truncate(l * 8)
+            raise
+        self.flush()
+
+    def flush(self):
+        self.fp_data.flush()
+        self.fp_index.flush()
+
+    def _ib1_of(self, i):
+        return 0 if i == 0 else self._ib_of(i - 1)
+
+    def _ib2_of(self, i):
+        return self._ib_of(i)
+
+    def _ib_of(self, i):
+        self.fp_index.seek(i * 8)
+        return self._int(self.fp_index.read(8))
+
+    @staticmethod
+    def _bytes(i: int):
+        return i.to_bytes(8, "little", signed=False)
+
+    @staticmethod
+    def _int(b: bytes):
+        return int.from_bytes(b, "little", signed=False)
 
 
 class subplots:
@@ -717,6 +789,22 @@ def make_parse_fixed_width(fields):
     return parse_fixed_width
 
 
+def let(f):
+    return f()
+
+
+def mkdir(path):
+    os.makedirs(path, exist_ok=True)
+
+
+def dirname(path):
+    return os.path.dirname(path) or os.path.curdir
+
+
+def jp(path, *more):
+    return os.path.normpath(os.path.sep.join((path, os.path.sep.join(more))))
+
+
 class TestAction(argparse.Action):
     def __init__(
         self,
@@ -1082,6 +1170,38 @@ class _Tester(unittest.TestCase):
         self.assertEqual(parse_fixed_width("1234567"), {"a": 1, "b": 456})
         with self.assertRaises(AssertionError):
             parse_fixed_width("12345")
+
+    def test_AppendDbV1(self):
+        with tempfile.TemporaryDirectory() as td:
+            with AppendDbV1(jp(td, "l1")) as ad:
+                assert len(ad) == 0, len(ad)
+                with self.assertRaises(IndexError):
+                    ad[0]
+                with self.assertRaises(IndexError):
+                    ad[-1]
+                ad.append("どうだろう？\n")
+                with self.assertRaises(IndexError):
+                    ad[-2]
+                with self.assertRaises(IndexError):
+                    ad[1]
+                assert len(ad) == 1, len(ad)
+                assert ad[0] == "どうだろう？\n", repr(ad[0])
+                assert ad[-1] == "どうだろう？\n", repr(ad[-1])
+                ad.append("もう1つ\n")
+                assert len(ad) == 2, len(ad)
+                assert ad[0] == "どうだろう？\n", repr(ad[0])
+                assert ad[-1] == "もう1つ\n", repr(ad[-1])
+                assert ad[1] == "もう1つ\n", repr(ad[1])
+                with self.assertRaises(IndexError):
+                    ad[-3]
+                with self.assertRaises(IndexError):
+                    ad[2]
+            with AppendDbV1(jp(td, "l1")) as ad:
+                assert len(ad) == 2, len(ad)
+                assert ad[1] == "もう1つ\n", repr(ad[1])
+                assert ad[0] == "どうだろう？\n", repr(ad[0])
+                ad.append("OK??\n")
+                assert ad[2] == "OK??\n", repr(ad[2])
 
 
 if __name__ == "__main__":
