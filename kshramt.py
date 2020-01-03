@@ -1,6 +1,7 @@
 from math import sin, cos, acos, sqrt, hypot, pi, log10, ceil, floor
 import argparse
 import collections
+import dataclasses
 import functools
 import itertools
 import logging
@@ -10,6 +11,7 @@ import os
 import pprint
 import sys
 import tempfile
+import typing
 import unittest
 
 
@@ -24,6 +26,7 @@ class Error(Exception):
 
 
 TICK_INTERVAL_PADDING_RATIO = 0.1
+_PY37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 
 
 class AppendDbV1:
@@ -131,6 +134,92 @@ class rcparams:
         matplotlib.rcParams.clear()
         for k, v in self.rcparams_orig:
             matplotlib.rcParams[k] = v
+
+
+if _PY37:
+
+    def dataclass_of(cls, x):
+        if dataclasses.is_dataclass(cls):
+            if not isinstance(x, dict):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            fields = {f.name: f.type for f in dataclasses.fields(cls)}
+            if set(fields.keys()) != set(x.keys()):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
+        elif type(cls) == type:
+            if not isinstance(x, cls):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
+        elif isinstance(cls, tuple):
+            if x not in cls:
+                raise TypeError(f"{x} is not compatible with {cls}")
+            return x
+        elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
+            vcls = cls.__args__[0]
+            return [dataclass_of(vcls, v) for v in x]
+        elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
+            kcls, vcls = cls.__args__
+            return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+        elif cls.__origin__ == set:
+            vcls = cls.__args__[0]
+            return {dataclass_of(vcls, v) for v in x}
+        elif cls.__origin__ == tuple:
+            vclss = cls.__args__
+            if len(vclss) != len(x):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
+        elif cls.__origin__ == typing.Union:
+            for ucls in cls.__args__:
+                try:
+                    return dataclass_of(ucls, x)
+                except TypeError:
+                    pass
+            raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+        else:
+            raise ValueError(f"Unsupported value {x}: {type(x)}")
+
+
+else:
+
+    def dataclass_of(cls, x):
+        if dataclasses.is_dataclass(cls):
+            if not isinstance(x, dict):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            fields = {f.name: f.type for f in dataclasses.fields(cls)}
+            if set(fields.keys()) != set(x.keys()):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
+        elif type(cls) == type:
+            if not isinstance(x, cls):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
+        elif cls.__origin__ == typing.Literal:
+            if x not in cls.__args__:
+                raise TypeError(f"{x} is not compatible with {cls}")
+            return x
+        elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
+            vcls = cls.__args__[0]
+            return [dataclass_of(vcls, v) for v in x]
+        elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
+            kcls, vcls = cls.__args__
+            return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+        elif cls.__origin__ == set:
+            vcls = cls.__args__[0]
+            return {dataclass_of(vcls, v) for v in x}
+        elif cls.__origin__ == tuple:
+            vclss = cls.__args__
+            if len(vclss) != len(x):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
+        elif cls.__origin__ == typing.Union:
+            for ucls in cls.__args__:
+                try:
+                    return dataclass_of(ucls, x)
+                except TypeError:
+                    pass
+            raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+        else:
+            raise ValueError(f"Unsupported value {x}: {type(x)}")
 
 
 def consume(g):
@@ -1202,6 +1291,76 @@ class _Tester(unittest.TestCase):
                 assert ad[0] == "どうだろう？\n", repr(ad[0])
                 ad.append("OK??\n")
                 assert ad[2] == "OK??\n", repr(ad[2])
+
+    if _PY37:
+
+        def test_dataclass_of(self):
+            @dataclasses.dataclass
+            class c4:
+                x: int
+                y: float
+
+            @dataclasses.dataclass
+            class c3:
+                x: ("yy",)
+                y: typing.Mapping[str, typing.Optional[c4]]
+
+            @dataclasses.dataclass
+            class c2:
+                x: ("xx",)
+                y: typing.Dict[str, typing.Optional[c4]]
+
+            @dataclasses.dataclass
+            class c1:
+                x: typing.List[typing.Union[c2, c3]]
+                y: c4
+                z: typing.Sequence[int]
+                a: typing.Set[str]
+                b: typing.Tuple[int, str, float]
+
+            x = c1(
+                x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
+                y=c4(x=1, y=1.3),
+                z=[1],
+                a=set(["a"]),
+                b=(1, "two", 3.4),
+            )
+            self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
+
+    else:
+
+        def test_dataclass_of(self):
+            @dataclasses.dataclass
+            class c4:
+                x: int
+                y: float
+
+            @dataclasses.dataclass
+            class c3:
+                x: typing.Literal["yy"]
+                y: typing.Mapping[str, typing.Optional[c4]]
+
+            @dataclasses.dataclass
+            class c2:
+                x: typing.Literal["xx", "zz"]
+                y: typing.Dict[str, typing.Optional[c4]]
+
+            @dataclasses.dataclass
+            class c1:
+                x: typing.List[typing.Union[c2, c3]]
+                y: c4
+                z: typing.Sequence[int]
+                a: typing.Set[str]
+                b: typing.Tuple[int, str, float]
+
+            x = c1(
+                x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
+                y=c4(x=1, y=1.3),
+                z=[1],
+                a=set(["a"]),
+                b=(1, "two", 3.4),
+            )
+            self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
 
 
 if __name__ == "__main__":
