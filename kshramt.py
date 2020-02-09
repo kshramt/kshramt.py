@@ -2,6 +2,7 @@ from math import sin, cos, acos, sqrt, hypot, pi, log10, ceil, floor
 import argparse
 import collections
 import dataclasses
+import decimal
 import functools
 import itertools
 import logging
@@ -138,14 +139,23 @@ class rcparams:
 
 if _PY37:
 
-    def dataclass_of(cls, x):
+    def dataclass_of(cls, x, implicit_conversions=None):
         if dataclasses.is_dataclass(cls):
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
             if set(fields.keys()) != set(x.keys()):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
-            return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
+            return cls(
+                **{
+                    k: dataclass_of(
+                        fields[k], v, implicit_conversions=implicit_conversions
+                    )
+                    for k, v in x.items()
+                }
+            )
+        elif implicit_conversions and (cls in implicit_conversions):
+            return implicit_conversions[cls](x)
         elif type(cls) == type:
             if not isinstance(x, cls):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -156,22 +166,38 @@ if _PY37:
             return x
         elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
             vcls = cls.__args__[0]
-            return [dataclass_of(vcls, v) for v in x]
+            return [
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for v in x
+            ]
         elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
             kcls, vcls = cls.__args__
-            return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+            return {
+                dataclass_of(
+                    kcls, k, implicit_conversions=implicit_conversions
+                ): dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for k, v in x.items()
+            }
         elif cls.__origin__ == set:
             vcls = cls.__args__[0]
-            return {dataclass_of(vcls, v) for v in x}
+            return {
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for v in x
+            }
         elif cls.__origin__ == tuple:
             vclss = cls.__args__
             if len(vclss) != len(x):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
-            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
+            return tuple(
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for vcls, v in zip(vclss, x)
+            )
         elif cls.__origin__ == typing.Union:
             for ucls in cls.__args__:
                 try:
-                    return dataclass_of(ucls, x)
+                    return dataclass_of(
+                        ucls, x, implicit_conversions=implicit_conversions
+                    )
                 except TypeError:
                     pass
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -181,14 +207,23 @@ if _PY37:
 
 else:
 
-    def dataclass_of(cls, x):
+    def dataclass_of(cls, x, implicit_conversions=implicit_conversions):
         if dataclasses.is_dataclass(cls):
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
             if set(fields.keys()) != set(x.keys()):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
-            return cls(**{k: dataclass_of(fields[k], v) for k, v in x.items()})
+            return cls(
+                **{
+                    k: dataclass_of(
+                        fields[k], v, implicit_conversions=implicit_conversions
+                    )
+                    for k, v in x.items()
+                }
+            )
+        elif implicit_conversions and (cls in implicit_conversions):
+            return implicit_conversions[cls](x)
         elif type(cls) == type:
             if not isinstance(x, cls):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -199,22 +234,38 @@ else:
             return x
         elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
             vcls = cls.__args__[0]
-            return [dataclass_of(vcls, v) for v in x]
+            return [
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for v in x
+            ]
         elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
             kcls, vcls = cls.__args__
-            return {dataclass_of(kcls, k): dataclass_of(vcls, v) for k, v in x.items()}
+            return {
+                dataclass_of(
+                    kcls, k, implicit_conversions=implicit_conversions
+                ): dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for k, v in x.items()
+            }
         elif cls.__origin__ == set:
             vcls = cls.__args__[0]
-            return {dataclass_of(vcls, v) for v in x}
+            return {
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for v in x
+            }
         elif cls.__origin__ == tuple:
             vclss = cls.__args__
             if len(vclss) != len(x):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
-            return tuple(dataclass_of(vcls, v) for vcls, v in zip(vclss, x))
+            return tuple(
+                dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
+                for vcls, v in zip(vclss, x)
+            )
         elif cls.__origin__ == typing.Union:
             for ucls in cls.__args__:
                 try:
-                    return dataclass_of(ucls, x)
+                    return dataclass_of(
+                        ucls, x, implicit_conversions=implicit_conversions
+                    )
                 except TypeError:
                     pass
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -633,7 +684,7 @@ def _acos(x):
     try:
         return acos(x)
     except ValueError:
-        assert abs(x) < 1.000001
+        assert abs(x) < 1.000_001
         if x > 0:
             return 0
         else:
@@ -1055,9 +1106,9 @@ class _Tester(unittest.TestCase):
                 (0, 0, 1),
                 (1, 0, 0),
                 (0, 1, 0),
-                (0.7071067811865475, 0.0, 0.7071067811865475),
-                (0.7071067811865475, 0.7071067811865475, 0.0),
-                (0.0, 0.7071067811865475, 0.7071067811865475),
+                (0.707_106_781_186_547_5, 0.0, 0.707_106_781_186_547_5),
+                (0.707_106_781_186_547_5, 0.707_106_781_186_547_5, 0.0),
+                (0.0, 0.707_106_781_186_547_5, 0.707_106_781_186_547_5),
             ],
         )
 
@@ -1110,20 +1161,20 @@ class _Tester(unittest.TestCase):
             each_cons(map(int, [1, 2, 3]), 0)
 
         for xs, n, expected in (
-            ([], 1, [],),
-            ([1, 2, 3], 1, [[1], [2], [3]],),
-            ([1, 2, 3], 2, [[1, 2], [2, 3]],),
-            ([1, 2, 3], 3, [[1, 2, 3]],),
-            ([1, 2, 3], 4, [],),
+            ([], 1, []),
+            ([1, 2, 3], 1, [[1], [2], [3]]),
+            ([1, 2, 3], 2, [[1, 2], [2, 3]]),
+            ([1, 2, 3], 3, [[1, 2, 3]]),
+            ([1, 2, 3], 4, []),
         ):
             self.assertEqual(each_cons(xs, n), expected)
 
         for xs, n, expected in (
-            ([], 1, [],),
-            ([1, 2, 3], 1, [[1], [2], [3]],),
-            ([1, 2, 3], 2, [[1, 2], [2, 3]],),
-            ([1, 2, 3], 3, [[1, 2, 3]],),
-            ([1, 2, 3], 4, [],),
+            ([], 1, []),
+            ([1, 2, 3], 1, [[1], [2], [3]]),
+            ([1, 2, 3], 2, [[1, 2], [2, 3]]),
+            ([1, 2, 3], 3, [[1, 2, 3]]),
+            ([1, 2, 3], 4, []),
         ):
             self.assertEqual(list(each_cons(map(int, xs), n)), expected)
 
@@ -1254,7 +1305,7 @@ class _Tester(unittest.TestCase):
         self.assertEqual(parse_fixed_width("32   5    abc"), {"a": 32, "b": -5})
         with self.assertRaises(AssertionError):
             parse_fixed_width("123456789")
-        parse_fixed_width = make_parse_fixed_width((("a", 1, int), 2, ("b", 3, int),))
+        parse_fixed_width = make_parse_fixed_width((("a", 1, int), 2, ("b", 3, int)))
         self.assertEqual(parse_fixed_width("123456"), {"a": 1, "b": 456})
         self.assertEqual(parse_fixed_width("1234567"), {"a": 1, "b": 456})
         with self.assertRaises(AssertionError):
@@ -1327,6 +1378,24 @@ class _Tester(unittest.TestCase):
             )
             self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
 
+        def test_dataclass_of_with_implicit_conversions(self):
+            @dataclasses.dataclass
+            class c2:
+                x: decimal.Decimal
+
+            @dataclasses.dataclass
+            class c1:
+                x: c2
+
+            self.assertEqual(
+                c1(c2(decimal.Decimal("3.2113"))),
+                dataclass_of(
+                    c1,
+                    dict(x=dict(x="3.2113")),
+                    implicit_conversions={decimal.Decimal: decimal.Decimal},
+                ),
+            )
+
     else:
 
         def test_dataclass_of(self):
@@ -1361,6 +1430,24 @@ class _Tester(unittest.TestCase):
                 b=(1, "two", 3.4),
             )
             self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
+
+        def test_dataclass_of_with_implicit_conversions(self):
+            @dataclasses.dataclass
+            class c2:
+                x: decimal.Decimal
+
+            @dataclasses.dataclass
+            class c1:
+                x: c2
+
+            self.assertEqual(
+                c1(c2(decimal.Decimal("3.2113"))),
+                dataclass_of(
+                    c1,
+                    dict(x=dict(x="3.2113")),
+                    implicit_conversions={decimal.Decimal: decimal.Decimal},
+                ),
+            )
 
 
 if __name__ == "__main__":
