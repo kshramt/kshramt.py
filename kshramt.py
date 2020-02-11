@@ -178,12 +178,12 @@ if _PY37:
                 ): dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
                 for k, v in x.items()
             }
-        elif cls.__origin__ == set:
+        elif cls.__origin__ in (set, collections.deque):
             vcls = cls.__args__[0]
-            return {
+            return cls.__origin__(
                 dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
                 for v in x
-            }
+            )
         elif cls.__origin__ == tuple:
             vclss = cls.__args__
             if len(vclss) != len(x):
@@ -246,12 +246,12 @@ else:
                 ): dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
                 for k, v in x.items()
             }
-        elif cls.__origin__ == set:
+        elif cls.__origin__ in (set, collections.deque):
             vcls = cls.__args__[0]
-            return {
+            return cls.__origin__(
                 dataclass_of(vcls, v, implicit_conversions=implicit_conversions)
                 for v in x
-            }
+            )
         elif cls.__origin__ == tuple:
             vclss = cls.__args__
             if len(vclss) != len(x):
@@ -1368,6 +1368,7 @@ class _Tester(unittest.TestCase):
                 z: typing.Sequence[int]
                 a: typing.Set[str]
                 b: typing.Tuple[int, str, float]
+                c: typing.Deque[int]
 
             x = c1(
                 x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
@@ -1375,6 +1376,7 @@ class _Tester(unittest.TestCase):
                 z=[1],
                 a=set(["a"]),
                 b=(1, "two", 3.4),
+                c=collections.deque([1, 2, 3]),
             )
             self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
 
@@ -1382,16 +1384,22 @@ class _Tester(unittest.TestCase):
             @dataclasses.dataclass
             class c2:
                 x: decimal.Decimal
+                y: typing.Deque[decimal.Decimal]
 
             @dataclasses.dataclass
             class c1:
                 x: c2
 
             self.assertEqual(
-                c1(c2(decimal.Decimal("3.2113"))),
+                c1(
+                    c2(
+                        decimal.Decimal("3.2113"),
+                        collections.deque([decimal.Decimal("1.992")]),
+                    )
+                ),
                 dataclass_of(
                     c1,
-                    dict(x=dict(x="3.2113")),
+                    dict(x=dict(x="3.2113", y=["1.992"])),
                     implicit_conversions={decimal.Decimal: decimal.Decimal},
                 ),
             )
@@ -1421,6 +1429,7 @@ class _Tester(unittest.TestCase):
                 z: typing.Sequence[int]
                 a: typing.Set[str]
                 b: typing.Tuple[int, str, float]
+                c: typing.Deque[int]
 
             x = c1(
                 x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
@@ -1428,6 +1437,7 @@ class _Tester(unittest.TestCase):
                 z=[1],
                 a=set(["a"]),
                 b=(1, "two", 3.4),
+                c=collections.deque([1, 2, 3]),
             )
             self.assertEqual(x, dataclass_of(c1, dataclasses.asdict(x)))
 
@@ -1435,16 +1445,22 @@ class _Tester(unittest.TestCase):
             @dataclasses.dataclass
             class c2:
                 x: decimal.Decimal
+                y: typing.Deque[decimal.Decimal]
 
             @dataclasses.dataclass
             class c1:
                 x: c2
 
             self.assertEqual(
-                c1(c2(decimal.Decimal("3.2113"))),
+                c1(
+                    c2(
+                        decimal.Decimal("3.2113"),
+                        collections.deque([decimal.Decimal("1.992")]),
+                    )
+                ),
                 dataclass_of(
                     c1,
-                    dict(x=dict(x="3.2113")),
+                    dict(x=dict(x="3.2113", y=["1.992"])),
                     implicit_conversions={decimal.Decimal: decimal.Decimal},
                 ),
             )
