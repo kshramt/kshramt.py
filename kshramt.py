@@ -322,7 +322,7 @@ def shell_escape(s):
 
 def split_dt(ts, xss, dt, t_min):
     assert all(len(ts) == len(xs) for xs in xss)
-    from scipy import searchsorted
+    from numpy import searchsorted
 
     t1, t2 = t_min, t_min + dt
     i1, i2 = searchsorted(ts, t1), searchsorted(ts, t2)
