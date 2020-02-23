@@ -217,7 +217,7 @@ if _PY37:
 
 else:
 
-    def dataclass_of(cls, x, implicit_conversions=implicit_conversions):
+    def dataclass_of(cls, x, implicit_conversions=None):
         if dataclasses.is_dataclass(cls):
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
