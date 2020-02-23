@@ -156,6 +156,14 @@ if _PY37:
             )
         elif implicit_conversions and (cls in implicit_conversions):
             return implicit_conversions[cls](x)
+        elif cls == complex:
+            if not isinstance(x, (int, float, complex)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
+        elif cls == float:
+            if not isinstance(x, (int, float)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
         elif type(cls) == type:
             if not isinstance(x, cls):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -224,6 +232,14 @@ else:
             )
         elif implicit_conversions and (cls in implicit_conversions):
             return implicit_conversions[cls](x)
+        elif cls == complex:
+            if not isinstance(x, (int, float, complex)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
+        elif cls == float:
+            if not isinstance(x, (int, float)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return x
         elif type(cls) == type:
             if not isinstance(x, cls):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -1404,6 +1420,30 @@ class _Tester(unittest.TestCase):
                 ),
             )
 
+        def test_dataclass_of_handles_flaot_and_complex_correctly(self):
+            @dataclasses.dataclass
+            class c1:
+                x: int
+                y: float
+                z: complex
+
+            for (x, y, z), (tx, ty, tz) in [
+                ((1, 2, 3), (int, int, int)),
+                ((1, 2, 3.0), (int, int, float)),
+                ((1, 2.0, 3), (int, float, int)),
+                ((1, 2.0, 3 + 4j), (int, float, complex)),
+            ]:
+                c = dataclass_of(c1, dict(x=x, y=y, z=z))
+                self.assertEqual(type(c.x), tx)
+                self.assertEqual(type(c.y), ty)
+                self.assertEqual(type(c.z), tz)
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1, y=2j, z=3))
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1.0, y=2, z=3))
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1j, y=2, z=3))
+
     else:
 
         def test_dataclass_of(self):
@@ -1464,6 +1504,30 @@ class _Tester(unittest.TestCase):
                     implicit_conversions={decimal.Decimal: decimal.Decimal},
                 ),
             )
+
+        def test_dataclass_of_handles_flaot_and_complex_correctly(self):
+            @dataclasses.dataclass
+            class c1:
+                x: int
+                y: float
+                z: complex
+
+            for (x, y, z), (tx, ty, tz) in [
+                ((1, 2, 3), (int, int, int)),
+                ((1, 2, 3.0), (int, int, float)),
+                ((1, 2.0, 3), (int, float, int)),
+                ((1, 2.0, 3 + 4j), (int, float, complex)),
+            ]:
+                c = dataclass_of(c1, dict(x=x, y=y, z=z))
+                self.assertEqual(type(c.x), tx)
+                self.assertEqual(type(c.y), ty)
+                self.assertEqual(type(c.z), tz)
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1, y=2j, z=3))
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1.0, y=2, z=3))
+            with self.assertRaises(TypeError):
+                dataclass_of(c1, dict(x=1j, y=2, z=3))
 
 
 if __name__ == "__main__":
