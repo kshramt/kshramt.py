@@ -156,6 +156,8 @@ if _PY37:
             )
         elif implicit_conversions and (cls in implicit_conversions):
             return implicit_conversions[cls](x)
+        elif cls == typing.Any:
+            return x
         elif cls == complex:
             if not isinstance(x, (int, float, complex)):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -232,6 +234,8 @@ else:
             )
         elif implicit_conversions and (cls in implicit_conversions):
             return implicit_conversions[cls](x)
+        elif cls == typing.Any:
+            return x
         elif cls == complex:
             if not isinstance(x, (int, float, complex)):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
